@@ -128,7 +128,7 @@ def get_default_catalog():
 
 def make_sparse_image(volume_name, output_path):
     '''Make a sparse disk image we can install a product to'''
-    cmd = ['/usr/bin/hdiutil', 'create', '-size', '9g', '-fs', 'HFS+',
+    cmd = ['/usr/bin/hdiutil', 'create', '-size', '9.5g', '-fs', 'HFS+',
            '-volname', volume_name, '-type', 'SPARSE', '-plist', output_path]
     try:
         output = subprocess.check_output(cmd)
@@ -460,6 +460,19 @@ def find_installer_app(mountpoint):
     return None
 
 
+def move_to_cwd(image_path):
+    """Move the final disk image to the current working directory"""
+
+    cwd = os.path.abspath('.')
+    output_path = os.path.join(cwd, os.path.basename(image_path))
+    if os.path.exists(output_path):
+        os.unlink(output_path)
+    os.rename(image_path, output_path)
+    # apply correct ownership to output_path
+    os.chown(output_path, os.stat(cwd).st_uid, os.stat('.').st_gid)
+    print('Disk image moved to: %s' % output_path)
+
+
 def main():
     '''Do the main thing here'''
     parser = argparse.ArgumentParser()
@@ -470,7 +483,7 @@ def main():
                         help='Software Update catalog URL. This option '
                         'overrides any seedprogram option.')
     parser.add_argument('--workdir', metavar='path_to_working_dir',
-                        default='.',
+                        default='/Library/installinstallmacos/',
                         help='Path to working directory on a volume with over '
                         '10G of available space. Defaults to current working '
                         'directory.')
@@ -579,6 +592,8 @@ def main():
         print('Product downloaded and installed to %s' % sparse_diskimage_path)
         if args.raw:
             unmountdmg(mountpoint)
+            # move the diskimage to the current working directory
+            move_to_cwd(sparse_diskimage_path)
         else:
             # if --raw option not given, create a r/o compressed diskimage
             # containing the Install macOS app
@@ -593,6 +608,8 @@ def main():
             unmountdmg(mountpoint)
             # delete sparseimage since we don't need it any longer
             os.unlink(sparse_diskimage_path)
+            # move the diskimage to the current working directory
+            move_to_cwd(compressed_diskimagepath)
 
 
 if __name__ == '__main__':
