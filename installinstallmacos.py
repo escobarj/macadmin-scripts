@@ -98,7 +98,8 @@ def get_seeding_program(sucatalog_url):
             if sucatalog_url == value:
                 return key
         return ''
-    except (OSError, ExpatError, AttributeError, KeyError):
+    except (OSError, IOError, ExpatError, AttributeError, KeyError) as err:
+        print(err, file=sys.stderr)
         return ''
 
 
@@ -107,7 +108,8 @@ def get_seed_catalog(seedname='DeveloperSeed'):
     try:
         seed_catalogs = read_plist(SEED_CATALOGS_PLIST)
         return seed_catalogs.get(seedname)
-    except (OSError, ExpatError, AttributeError, KeyError):
+    except (OSError, IOError, ExpatError, AttributeError, KeyError) as err:
+        print(err, file=sys.stderr)
         return ''
 
 
@@ -116,7 +118,8 @@ def get_seeding_programs():
     try:
         seed_catalogs = read_plist(SEED_CATALOGS_PLIST)
         return list(seed_catalogs.keys())
-    except (OSError, ExpatError, AttributeError, KeyError):
+    except (OSError, IOError, ExpatError, AttributeError, KeyError) as err:
+        print(err, file=sys.stderr)
         return ''
 
 
@@ -128,7 +131,7 @@ def get_default_catalog():
 
 def make_sparse_image(volume_name, output_path):
     '''Make a sparse disk image we can install a product to'''
-    cmd = ['/usr/bin/hdiutil', 'create', '-size', '9.5g', '-fs', 'HFS+',
+    cmd = ['/usr/bin/hdiutil', 'create', '-size', '16g', '-fs', 'HFS+',
            '-volname', volume_name, '-type', 'SPARSE', '-plist', output_path]
     try:
         output = subprocess.check_output(cmd)
